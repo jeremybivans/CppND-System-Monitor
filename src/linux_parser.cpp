@@ -69,29 +69,6 @@ vector<int> LinuxParser::Pids() {
   return pids;
 }
 
-// DONE: Read and return the system memory utilization
-/*float LinuxParser::MemoryUtilization() {   
-  string str, kb;
-  string line;
-  int i = 0;
-  long int Total{}, value{}, free{};
-  std::ifstream filestream(kProcDirectory + kMeminfoFilename);
-  if (filestream.is_open()) {
-    while (std::getline(filestream, line) &&
-           i < 2)  // Reading only first 2 lines
-    {
-      std::istringstream linestream(line);
-      while (linestream >> str >> value >> kb) {
-        if (str == "MemTotal:")
-          Total = value;
-        else if (str == "MemFree:")
-          free = value;
-      }
-      i++;
-    }
-  }
-  return float(Total - free) / (Total);
-}*/
 float LinuxParser::MemoryUtilization() {
   string line;
   string key;
@@ -276,27 +253,44 @@ string LinuxParser::CpuUtilization() {
   float CPU_Percentage;
   string cpu, user, nice, system, idle, iowait, irq, softirq, steal, guest,
       guest_nice;
-  std::ifstream filestream(kProcDirectory + kStatFilename);
-  if (filestream.is_open()) {
-    static long prevTotal = 0, prevIdle = 0;
-    long Total, Idle;
-    float total_diff, idle_diff;
-    std::getline(filestream, line);
-    std::istringstream linestream(line);
-    linestream >> cpu >> user >> nice >> system >> idle >> iowait >> irq >>
+  
+	std::ifstream filestream(kProcDirectory + kStatFilename);
+  
+	if (filestream.is_open()) {
+   
+		static long prevTotal = 0, prevIdle = 0;
+  
+		long Total, Idle;
+   
+		float total_diff, idle_diff;
+    
+		std::getline(filestream, line);
+    
+		std::istringstream linestream(line);
+    
+		linestream >> cpu >> user >> nice >> system >> idle >> iowait >> irq >>
         softirq >> steal >> guest >> guest_nice;
-    Total = std::stol(user) + std::stol(nice) + std::stol(system) +
+    
+		Total = std::stol(user) + std::stol(nice) + std::stol(system) +
             std::stol(idle) + std::stol(iowait) + std::stol(irq) +
             std::stol(softirq) + std::stol(steal) + std::stol(guest) +
             std::stol(guest_nice);
-    Idle = std::stol(idle) + std::stol(iowait);
-    total_diff = (float)(Total - prevTotal);
-    idle_diff = (float)(Idle - prevIdle);
-    CPU_Percentage = ((total_diff - idle_diff) / total_diff);
-    prevTotal = Total;
-    prevIdle = Idle;
-  }
-  return std::to_string(CPU_Percentage);
+    
+		Idle = std::stol(idle) + std::stol(iowait);
+    
+		total_diff = (float)(Total - prevTotal);
+    
+		idle_diff = (float)(Idle - prevIdle);
+   
+		CPU_Percentage = ((total_diff - idle_diff) / total_diff);
+   
+		prevTotal = Total;
+    
+		prevIdle = Idle;
+  } 
+
+	return std::to_string(CPU_Percentage);
+
 }
 
 // DONE: Read and return the total number of processes
@@ -402,59 +396,106 @@ string LinuxParser::Ram(int pid) {
 
 // DONE: Read and return the user ID associated with a process
 string LinuxParser::Uid(int pid) {
-  string line, key, value, UID;
-  string str_pid = to_string(pid);
-  std::ifstream filestream(kProcDirectory + str_pid + kStatusFilename);
-  if (filestream.is_open()) {
-    while (std::getline(filestream, line)) {
-      std::istringstream linestream(line);
-      linestream >> key >> value;
-      if (key == "Uid:") {
-        UID = value;
+  
+	string line, key, value, UID;
+  
+	string str_pid = to_string(pid);
+  
+	std::ifstream filestream(kProcDirectory + str_pid + kStatusFilename);
+  
+	if (filestream.is_open()) {
+  
+		while (std::getline(filestream, line)) {
+    
+			std::istringstream linestream(line);
+    
+			linestream >> key >> value;
+   
+			if (key == "Uid:") {
+     
+				UID = value;
+				
       }
+			
     }
+		
   }
-  return UID;
+	
+ 
+	return UID;
+	
 }
 
 // DONE: Read and return the user associated with a process
 string LinuxParser::User(int pid) {
   string line, user, x, uid_, result;
   string UID = LinuxParser::Uid(pid);
-  std::ifstream file(kPasswordPath);
-  if (file.is_open()) {
-    while (std::getline(file, line)) {
-      std::replace(line.begin(), line.end(), ':', ' ');
-      std::istringstream stream(line);
-      while (stream >> user >> x >> uid_) {
-        if (uid_ == UID)
-          result = user;
-      }
-    }
-  }
-  return result;
+  
+	std::ifstream file(kPasswordPath);
+  
+	if (file.is_open()) {
+  
+		while (std::getline(file, line)) {
+   
+			std::replace(line.begin(), line.end(), ':', ' ');
+ 
+			std::istringstream stream(line);
+   
+			while (stream >> user >> x >> uid_) {
+   
+				if (uid_ == UID)
+    
+					result = user;
+     
+			}
+   
+		}
+ 
+	}
+  
+	return result;
+
 }
 
 // DONE: Read and return the uptime of a process
 long LinuxParser::UpTime(int pid) {
-  string line, key;
-  int count = 1;
-  long up_time;
-  string str_pid = to_string(pid);
-  std::ifstream filestream(kProcDirectory + str_pid + kStatFilename);
-  if (filestream.is_open()) {
-    while (std::getline(filestream, line)) {
-      std::istringstream linestream(line);
-      while (linestream >> key) {
-        if (count == 22) {
-          up_time = std::stol(key);
-        }
-        count++;
-      }
-    }
-  }
-  up_time /= sysconf(_SC_CLK_TCK);
-  return up_time;
+ 
+	string line, key;
+ 
+	int count = 1;
+  
+	long up_time;
+  
+	string str_pid = to_string(pid);
+  
+	std::ifstream filestream(kProcDirectory + str_pid + kStatFilename);
+
+	if (filestream.is_open()) {
+  
+		while (std::getline(filestream, line)) {
+    
+			std::istringstream linestream(line);
+    
+			while (linestream >> key) {
+       
+				if (count == 22) {
+      
+					up_time = std::stol(key);
+      
+				}
+      
+				count++;
+     
+			}
+   
+		}
+  
+	}
+ 
+	up_time /= sysconf(_SC_CLK_TCK);
+  
+	return up_time;
+
 }
 float LinuxParser::CpuUtilization(int pid) {
   string line, key;
@@ -462,37 +503,71 @@ float LinuxParser::CpuUtilization(int pid) {
       total_time;
   int count = 1;
   float cpu_usage;
-  string str_pid = to_string(pid);
-  std::ifstream filestream(kProcDirectory + str_pid + kStatFilename);
-  if (filestream.is_open()) {
-    while (std::getline(filestream, line)) {
-      std::istringstream linestream(line);
-      while (linestream >> key) {
-        switch (count) {
-        case 14:
-          utime = std::stol(key);
-          break;
-        case 15:
-          stime = std::stol(key);
-          break;
-        case 16:
-          cutime = std::stol(key);
-          break;
-        case 17:
-          cstime = std::stol(key);
-          break;
-        case 22:
-          starttime = std::stol(key);
-          break;
-        }
-        count++;
-      }
-    }
-  }
-  uptime = LinuxParser::UpTime();
-  Hertz = sysconf(_SC_CLK_TCK);
-  total_time = utime + stime + cutime + cstime;
-  seconds = uptime - (long)((float)starttime / (float)Hertz);
-  cpu_usage = (((float)total_time / (float)Hertz) / (float)seconds);
-  return cpu_usage;
+  
+	string str_pid = to_string(pid);
+  
+	std::ifstream filestream(kProcDirectory + str_pid + kStatFilename);
+  
+	if (filestream.is_open()) {
+
+		while (std::getline(filestream, line)) {
+
+			std::istringstream linestream(line);
+
+			while (linestream >> key) {
+
+				switch (count) {
+        
+					case 14:
+
+						utime = std::stol(key);
+         
+						break;
+
+					case 15:
+        
+						stime = std::stol(key);
+        
+						break;
+
+					case 16:
+          
+						cutime = std::stol(key);
+        
+						break;
+        
+					case 17:
+        
+						cstime = std::stol(key);
+        
+						break;
+
+					case 22:
+        
+						starttime = std::stol(key);
+        
+						break;
+
+				}
+        
+				count++;
+      
+			}
+    
+		}
+  
+	}
+  
+	uptime = LinuxParser::UpTime();
+  
+	Hertz = sysconf(_SC_CLK_TCK);
+  
+	total_time = utime + stime + cutime + cstime;
+  
+	seconds = uptime - (long)((float)starttime / (float)Hertz);
+  
+	cpu_usage = (((float)total_time / (float)Hertz) / (float)seconds);
+
+	return cpu_usage;
+
 }
