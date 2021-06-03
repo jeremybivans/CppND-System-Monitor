@@ -24,21 +24,44 @@ vector<Process>& System::Processes() {
 
     vector<int> pIDs = LinuxParser::Pids();
   
-    for(auto pID : pIDs){
+	for(auto pID : pIDs) {
+       
+      Process thisPid(pID);
       
-        Process thisPid(pID);
+      if(thisPid.Command()=="") {
+        
+        continue;
+        
+      }
+      else if(thisPid.Ram() == "0") {
+      
+      	continue;
+      
+      }
+     
+      else if(thisPid.CpuUtilization() == 0.00) {
+      
+      	continue;
+      
+      }
+      
+      else {
+      
         processes_.emplace_back(thisPid);
-      
+        
+      }
+   
     }
   
-    return processes_; }
+    return processes_;
+}
 
 // DONE: Return the system's kernel identifier (string)
 std::string System::Kernel() { 
 
   string kernel = LinuxParser::Kernel();
   
-  return string(); 
+  return kernel; 
 }
 
 // DONE: Return the system's memory utilization
